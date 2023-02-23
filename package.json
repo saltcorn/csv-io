@@ -6,7 +6,8 @@
   "dependencies": {
     "@saltcorn/markup": "^0.8.0",
     "@saltcorn/data": "^0.8.0",
-    "moment": "2.29.4"
+    "moment": "2.29.4",
+    "csv-stringify": "^5.5.0"
   },
   "author": "Tom Nielsen",
   "license": "MIT",
