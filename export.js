@@ -103,13 +103,15 @@ const do_download = async (
 ) => {
   const table = Table.findOne(table_id);
   const rows = await table.getJoinedRows({});
-  const blob = await async_stringify(rows);
-  console.log(blob);
+  const str = await async_stringify(rows);
+  //console.log(str);
   return {
-    download: {
-      blob,
-      filename: "export.csv",
-      mimetype: "text/csv",
+    json: {
+      download: {
+        blob: Buffer.from(str).toString("base64"),
+        filename: "export.csv",
+        mimetype: "text/csv",
+      },
     },
   };
 };
