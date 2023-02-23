@@ -6,7 +6,7 @@ const Workflow = require("@saltcorn/data/models/workflow");
 const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 
 const stringify = require("csv-stringify");
-
+const URL = require("url").URL;
 const {
   text,
   div,
@@ -31,6 +31,9 @@ const {
   initial_config_all_fields,
 } = require("@saltcorn/data/plugin-helper");
 
+const {
+  get_viewable_fields,
+} = require("@saltcorn/data/base-plugin/viewtemplates/viewable_fields");
 const { hashState } = require("@saltcorn/data/utils");
 
 const initial_config = initial_config_all_fields(false);
@@ -145,10 +148,27 @@ const do_download = async (
     forPublic: !req.user,
     forUser: req.user,
   });
-  const str = await async_stringify(rows);
-  return { success: "ok" };
-  //console.log(str);
-  /*return {
+  const tfields = get_viewable_fields(
+    viewname,
+    stateHash,
+    table,
+    fields,
+    columns,
+    false,
+    req,
+    req.__
+  );
+
+  const csvRows = rows.map((row) => {
+    const csvRow = {};
+    tfields.forEach(({ label, key }) => {
+      csvRow[label] = typeof key === "function" ? key(row) : row[key];
+    });
+    return csvRow;
+  });
+  const str = await async_stringify(csvRows, { header: true });
+
+  return {
     json: {
       download: {
         blob: Buffer.from(str).toString("base64"),
@@ -156,7 +176,7 @@ const do_download = async (
         mimetype: "text/csv",
       },
     },
-  };*/
+  };
 };
 
 module.exports = {
