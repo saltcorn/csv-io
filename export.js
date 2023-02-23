@@ -28,9 +28,13 @@ const {
   stateFieldsToWhere,
   stateFieldsToQuery,
   readState,
+  initial_config_all_fields,
 } = require("@saltcorn/data/plugin-helper");
 
 const { hashState } = require("@saltcorn/data/utils");
+
+const initial_config = initial_config_all_fields(false);
+
 const configuration_workflow = (req) =>
   new Workflow({
     steps: [
@@ -49,8 +53,17 @@ const configuration_workflow = (req) =>
             req,
           });
 
+          const type_pick = field_picker_repeat.find((f) => f.name === "type");
+          type_pick.attributes.options = type_pick.attributes.options.filter(
+            ({ name }) =>
+              ["Field", "JoinField", "Aggregation", "FormulaValue"].includes(
+                name
+              )
+          );
+
           const use_field_picker_repeat = field_picker_repeat.filter(
-            (f) => !["state_field", "col_width_units"].includes(f.name)
+            (f) =>
+              !["state_field", "col_width", "col_width_units"].includes(f.name)
           );
 
           return new Form({
@@ -152,5 +165,7 @@ module.exports = {
   get_state_fields,
   configuration_workflow,
   run,
+  initial_config,
+
   routes: { do_download },
 };
