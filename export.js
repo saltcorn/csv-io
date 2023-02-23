@@ -26,9 +26,11 @@ const {
   field_picker_fields,
   picked_fields_to_query,
   stateFieldsToWhere,
+  stateFieldsToQuery,
   readState,
 } = require("@saltcorn/data/plugin-helper");
 
+const { hashState } = require("@saltcorn/data/utils");
 const configuration_workflow = (req) =>
   new Workflow({
     steps: [
@@ -101,11 +103,39 @@ const do_download = async (
   body,
   { req, res }
 ) => {
-  const table = Table.findOne(table_id);
-  const rows = await table.getJoinedRows({});
+  const table = await Table.findOne(table_id);
+  const state = {};
+  const referrer = req.get("Referrer");
+  if (referrer) {
+    const refUrl = new URL(referrer || "");
+    for (const [name, value] of refUrl.searchParams) {
+      state[name] = value;
+    }
+  }
+  const stateHash = hashState(state, viewname);
+
+  const fields = await table.getFields();
+  const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
+  const where = await stateFieldsToWhere({ fields, state, table });
+  const q = await stateFieldsToQuery({
+    state,
+    fields,
+    prefix: "a.",
+    stateHash,
+  });
+
+  let rows = await table.getJoinedRows({
+    where,
+    joinFields,
+    aggregations,
+    ...q,
+    forPublic: !req.user,
+    forUser: req.user,
+  });
   const str = await async_stringify(rows);
+  return { success: "ok" };
   //console.log(str);
-  return {
+  /*return {
     json: {
       download: {
         blob: Buffer.from(str).toString("base64"),
@@ -113,7 +143,7 @@ const do_download = async (
         mimetype: "text/csv",
       },
     },
-  };
+  };*/
 };
 
 module.exports = {
