@@ -100,6 +100,7 @@ const run = async (table_id, viewname, { columns }, state, extraArgs) => {
       class: "btn btn-primary",
       onclick: `view_post('${viewname}', 'do_download', {});`,
     },
+    i({ class: "fas fa-download me-1" }),
     "Export CSV"
   );
 };
@@ -172,7 +173,7 @@ const do_download = async (
     json: {
       download: {
         blob: Buffer.from(str).toString("base64"),
-        filename: "export.csv",
+        filename: `${table.name}.csv`,
         mimetype: "text/csv",
       },
     },
