@@ -6,7 +6,7 @@ module.exports = {
   requireRow: true,
   configFields: async ({ table }) => {
     const tables = await Table.find();
-    const file_fields = table.fields.find((f) => f.type === "File");
+    const file_fields = table.fields.filter((f) => f.type === "File");
     return [
       {
         name: "table_dest",

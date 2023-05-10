@@ -1,6 +1,6 @@
 {
   "name": "@saltcorn/csv-io",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CSV export user view",
   "main": "index.js",
   "dependencies": {
