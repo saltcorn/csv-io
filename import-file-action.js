@@ -36,11 +36,13 @@ module.exports = {
    * @returns {Promise<void>}
    */
   run: async ({ row, configuration: { table_dest, file_field } }) => {
-    if (!row?.[file_field]) return;
+    if (!row?.[file_field]) {
+      return { error: "CSV file not found" };
+    }
     const file = await File.findOne({ filename: row[file_field] });
-    const table = Table.findOne({name: table_dest});
+    const table = Table.findOne({ name: table_dest });
     const result = await table.import_csv_file(file.location);
-    if (result.error) return { error: result.error };
-    else return { notify: result.success };
+    if (result.error) return { error: result.error, details: result.details };
+    else return { notify: result.success, details: result.details };
   },
 };
