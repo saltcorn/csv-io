@@ -41,6 +41,6 @@ module.exports = {
     const table = Table.findOne({name: table_dest});
     const result = await table.import_csv_file(file.location);
     if (result.error) return { error: result.error };
-    else return { notify: result.sucess };
+    else return { notify: result.success };
   },
 };
