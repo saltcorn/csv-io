@@ -73,6 +73,12 @@ const configuration_workflow = (req) =>
                 required: true,
                 default: "Export CSV",
               },
+              {
+                name: "bom",
+                label: "Add BOM",
+                sublabel: "Prepend the UTF-8 byte order mark (BOM) to the file",
+                type: "Bool",
+              },
             ],
           }),
       },
@@ -165,7 +171,7 @@ const async_stringify = (...args) => {
 const do_download = async (
   table_id,
   viewname,
-  { columns, what, delimiter },
+  { columns, what, delimiter, bom },
   body,
   { req, res }
 ) => {
@@ -221,6 +227,7 @@ const do_download = async (
     const str = await async_stringify(rows, {
       header: true,
       columns,
+      bom: !!bom,
       delimiter: delimiter || ",",
       cast: {
         date: (value) => value.toISOString(),
@@ -260,6 +267,7 @@ const do_download = async (
   const str = await async_stringify(csvRows, {
     header: true,
     delimiter: delimiter || ",",
+    bom: !!bom,
   });
 
   return json_response(str);
