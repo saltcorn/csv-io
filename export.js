@@ -54,6 +54,19 @@ const configuration_workflow = (req) =>
                 attributes: { options: ["All columns", "Specify columns"] },
               },
               {
+                name: "delimiter",
+                label: "Delimiter",
+                type: "String",
+                required: true,
+                attributes: {
+                  options: [
+                    { name: ",", label: "Comma (,)" },
+                    { name: ";", label: "Semicolon (;)" },
+                    { name: "\t", label: "Tab (⇥)" },
+                  ],
+                },
+              },
+              {
                 name: "label",
                 label: "Label",
                 type: "String",
@@ -152,7 +165,7 @@ const async_stringify = (...args) => {
 const do_download = async (
   table_id,
   viewname,
-  { columns, what },
+  { columns, what, delimiter },
   body,
   { req, res }
 ) => {
@@ -208,6 +221,7 @@ const do_download = async (
     const str = await async_stringify(rows, {
       header: true,
       columns,
+      delimiter: delimiter || ",",
       cast: {
         date: (value) => value.toISOString(),
         boolean: (v) => (v ? "true" : "false"),
@@ -243,7 +257,10 @@ const do_download = async (
     });
     return csvRow;
   });
-  const str = await async_stringify(csvRows, { header: true });
+  const str = await async_stringify(csvRows, {
+    header: true,
+    delimiter: delimiter || ",",
+  });
 
   return json_response(str);
 };
