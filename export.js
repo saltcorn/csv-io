@@ -53,6 +53,13 @@ const configuration_workflow = (req) =>
                 required: true,
                 attributes: { options: ["All columns", "Specify columns"] },
               },
+              {
+                name: "label",
+                label: "Label",
+                type: "String",
+                required: true,
+                default: "Export CSV",
+              },
             ],
           }),
       },
@@ -117,14 +124,20 @@ const get_state_fields = async (table_id, viewname, { show_view }) => {
     });
 };
 
-const run = async (table_id, viewname, { columns }, state, extraArgs) => {
+const run = async (
+  table_id,
+  viewname,
+  { columns, label },
+  state,
+  extraArgs
+) => {
   return button(
     {
       class: "btn btn-primary",
       onclick: `view_post('${viewname}', 'do_download', {});`,
     },
     i({ class: "fas fa-download me-1" }),
-    "Export CSV"
+    label || "Export CSV"
   );
 };
 
@@ -176,7 +189,7 @@ const do_download = async (
 
   if (what === "All columns") {
     const columns = table.fields.sort((a, b) => a.id - b.id).map((f) => f.name);
-    const rows = await table.getRows({}, { orderBy: "id" });
+    const rows = await table.getRows(where, { orderBy: "id" });
 
     for (const field of table.fields) {
       if (field.type?.name === "JSON" && field.attributes?.hasSchema) {
