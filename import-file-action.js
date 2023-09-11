@@ -5,7 +5,7 @@ const File = require("@saltcorn/data/models/file");
 module.exports = {
   requireRow: true,
   configFields: async ({ table }) => {
-    const tables = await Table.find();
+    const tables = await Table.find({}, { cached: true });
     const file_fields = table.fields.filter((f) => f.type === "File");
     return [
       {
