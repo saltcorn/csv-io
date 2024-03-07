@@ -2,6 +2,7 @@ const db = require("@saltcorn/data/db");
 const Table = require("@saltcorn/data/models/table");
 const View = require("@saltcorn/data/models/view");
 const File = require("@saltcorn/data/models/file");
+const { jsexprToWhere } = require("@saltcorn/data/models/expression");
 const {
   field_picker_fields,
   picked_fields_to_query,
@@ -14,6 +15,7 @@ const { auto_expand_json_cols, async_stringify } = require("./common");
 const {
   get_viewable_fields,
 } = require("@saltcorn/data/base-plugin/viewtemplates/viewable_fields");
+const { interpolate } = require("@saltcorn/data/utils");
 
 module.exports = {
   configFields: async ({ table }) => {
@@ -34,6 +36,8 @@ module.exports = {
         name: "where",
         label: "Where",
         type: "String",
+        class: "validate-expression",
+        sublabel: "Only include rows where this formula is true. ",
       },
       {
         name: "filename",
@@ -65,15 +69,24 @@ module.exports = {
       table.fields
     );
 
+    const where1 = where
+      ? jsexprToWhere(
+          where,
+          { ...(row || {}), user, user_id: user?.id },
+          fields
+        )
+      : {};
     const write_file = async (str) => {
-      await File.from_contents(filename, "text/csv", str, user?.id);
+      const fnm =
+        interpolate && row ? interpolate(filename, row, user) : filename;
+      await File.from_contents(fnm, "text/csv", str, user?.id);
     };
 
     if (what === "All columns") {
       const columns = table.fields
         .sort((a, b) => a.id - b.id)
         .map((f) => f.name);
-      const rows = await table.getRows(where, { orderBy: "id" });
+      const rows = await table.getRows(where1, { orderBy: "id" });
       auto_expand_json_cols(columns, table, rows);
       const str = await async_stringify(rows, {
         header: true,
@@ -89,7 +102,7 @@ module.exports = {
       return {};
     }
     let rows = await table.getJoinedRows({
-      where,
+      where: where1,
       joinFields,
       aggregations,
       forPublic: !user,
