@@ -16,7 +16,6 @@ const {
 } = require("@saltcorn/data/base-plugin/viewtemplates/viewable_fields");
 
 module.exports = {
-  disableInBuilder: true,
   configFields: async ({ table }) => {
     const views = await View.find({ viewtemplate: "CSV Export" });
     return [
@@ -120,7 +119,9 @@ module.exports = {
       delimiter: delimiter || ",",
       bom: !!bom,
     });
-    await write_file(str);
+    const str1 = str.replace(/<time[^>]*>(.*?)<\/time>/gi, "$1");
+    //console.log(str1);
+    await write_file(str1);
     return {};
   },
 };
