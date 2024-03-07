@@ -18,7 +18,7 @@ const {
 module.exports = {
   disableInBuilder: true,
   configFields: async ({ table }) => {
-    const views = View.findOne({ viewtemplate: "CSV Export" });
+    const views = await View.find({ viewtemplate: "CSV Export" });
     return [
       {
         name: "export_view",
@@ -120,5 +120,7 @@ module.exports = {
       delimiter: delimiter || ",",
       bom: !!bom,
     });
+    await write_file(str);
+    return {};
   },
 };
