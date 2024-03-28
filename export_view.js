@@ -1,6 +1,8 @@
 const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
+const Library = require("@saltcorn/data/models/library");
+const User = require("@saltcorn/data/models/user");
 const View = require("@saltcorn/data/models/view");
 const Workflow = require("@saltcorn/data/models/workflow");
 const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
@@ -28,12 +30,16 @@ const {
   stateFieldsToQuery,
   readState,
   initial_config_all_fields,
+  calcfldViewOptions,
+  calcrelViewOptions,
 } = require("@saltcorn/data/plugin-helper");
 
 const {
   get_viewable_fields,
 } = require("@saltcorn/data/base-plugin/viewtemplates/viewable_fields");
 const { hashState } = require("@saltcorn/data/utils");
+const { getState } = require("@saltcorn/data/db/state");
+
 const {
   json_response,
   auto_expand_json_cols,
@@ -89,48 +95,91 @@ const configuration_workflow = (req) =>
       {
         name: "Columns",
         onlyWhen: (context) => context.what !== "All columns",
-        form: async (context) => {
+        builder: async (context) => {
           const table = await Table.findOne(
             context.table_id
               ? { id: context.table_id }
               : { name: context.exttable_name }
           );
+          const fields = table.getFields();
           //console.log(context);
-          const field_picker_repeat = await field_picker_fields({
-            table,
-            viewname: context.viewname,
-            req,
-          });
-
-          const type_pick = field_picker_repeat.find((f) => f.name === "type");
-          type_pick.attributes.options = type_pick.attributes.options.filter(
-            ({ name }) =>
-              ["Field", "JoinField", "Aggregation", "FormulaValue"].includes(
-                name
-              )
+          const { field_view_options, handlesTextStyle } = calcfldViewOptions(
+            fields,
+            "list"
           );
-
-          const use_field_picker_repeat = field_picker_repeat.filter(
-            (f) =>
-              !["state_field", "col_width", "col_width_units"].includes(f.name)
-          );
-
-          return new Form({
-            fields: [
-              {
-                name: "what",
+          if (table.name === "users") {
+            fields.push(
+              new Field({
+                name: "verification_url",
+                label: "Verification URL",
                 type: "String",
-                required: true,
-                attributes: { options: ["Whole table", "Specify columns"] },
-              },
-              new FieldRepeat({
-                name: "columns",
-                fancyMenuEditor: true,
-                showIf: { what: "Whole table" },
-                fields: use_field_picker_repeat,
-              }),
-            ],
+              })
+            );
+            field_view_options.verification_url = ["as_text", "as_link"];
+          }
+          const rel_field_view_options = await calcrelViewOptions(
+            table,
+            "list"
+          );
+          const roles = await User.get_roles();
+          const { parent_field_list } = await table.get_parent_relations(
+            true,
+            true
+          );
+
+          const { child_field_list, child_relations } =
+            await table.get_child_relations(true);
+          var agg_field_opts = {};
+          child_relations.forEach(({ table, key_field, through }) => {
+            const aggKey =
+              (through ? `${through.name}->` : "") +
+              `${table.name}.${key_field.name}`;
+            agg_field_opts[aggKey] = table.fields
+              .filter((f) => !f.calculated || f.stored)
+              .map((f) => ({
+                name: f.name,
+                label: f.label,
+                ftype: f.type.name || f.type,
+                table_name: table.name,
+                table_id: table.id,
+              }));
           });
+          const agg_fieldview_options = {};
+
+          Object.values(getState().types).forEach((t) => {
+            agg_fieldview_options[t.name] = Object.entries(t.fieldviews)
+              .filter(([k, v]) => !v.isEdit && !v.isFilter)
+              .map(([k, v]) => k);
+          });
+          const library = (await Library.find({})).filter((l) =>
+            l.suitableFor("list")
+          );
+          return {
+            tableName: table.name,
+            fields: fields.map((f) => f.toBuilder),
+
+            //fieldViewConfigForms,
+            field_view_options: {
+              ...field_view_options,
+              ...rel_field_view_options,
+            },
+            parent_field_list,
+            child_field_list,
+            agg_field_opts,
+            agg_fieldview_options,
+            actions: [],
+            triggerActions: [],
+            builtInActions: [],
+            roles,
+            library,
+
+            handlesTextStyle,
+            mode: "list",
+            ownership:
+              !!table.ownership_field_id ||
+              !!table.ownership_formula ||
+              table.name === "users",
+          };
         },
       },
     ],
