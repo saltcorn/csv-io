@@ -274,7 +274,7 @@ const run = async (
 const do_download = async (
   table_id,
   viewname,
-  { columns, what, delimiter, bom },
+  { columns, layout, what, delimiter, bom },
   body,
   { req, res }
 ) => {
@@ -336,10 +336,13 @@ const do_download = async (
     req.__
   );
 
+  const layoutCols = layout?.besides;
   const csvRows = rows.map((row) => {
     const csvRow = {};
-    tfields.forEach(({ label, key }) => {
-      csvRow[label] = typeof key === "function" ? key(row) : row[key];
+    tfields.forEach(({ label, key }, ix) => {
+      const layooutCol = layoutCols?.[ix];
+      csvRow[layooutCol?.header_label || label] =
+        typeof key === "function" ? key(row) : row[key];
     });
     return csvRow;
   });
