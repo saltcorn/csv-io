@@ -156,6 +156,62 @@ const configuration_workflow = (req) =>
           const library = (await Library.find({})).filter((l) =>
             l.suitableFor("list")
           );
+
+          if (!context.layout?.list_columns) {
+            // legacy views
+            const newCols = [];
+
+            const typeMap = {
+              Field: "field",
+              JoinField: "join_field",
+              ViewLink: "view_link",
+              Link: "link",
+              Action: "action",
+              Text: "blank",
+              DropdownMenu: "dropdown_menu",
+              Aggregation: "aggregation",
+            };
+            (context.columns || []).forEach((col) => {
+              const newCol = {
+                alignment: col.alignment || "Default",
+                col_width: col.col_width || "",
+                showif: col.showif || "",
+                header_label: col.header_label || "",
+                col_width_units: col.col_width_units || "px",
+                contents: {
+                  ...col,
+                  configuration: { ...col },
+                  type: typeMap[col.type],
+                },
+              };
+              delete newCol.contents._columndef;
+              delete newCol.contents.configuration._columndef;
+              delete newCol.contents.configuration.type;
+
+              switch (col.type) {
+                case "ViewLink":
+                  newCol.contents.isFormula = {
+                    label: !!col.view_label_formula,
+                  };
+                  break;
+                case "Link":
+                  newCol.contents.isFormula = {
+                    url: !!col.link_url_formula,
+                    text: !!col.link_text_formula,
+                  };
+                  newCol.contents.text = col.link_text;
+                  newCol.contents.url = col.link_url;
+                  break;
+              }
+
+              newCols.push(newCol);
+            });
+
+            context.layout = {
+              besides: newCols,
+              list_columns: true,
+            };
+          }
           return {
             tableName: table.name,
             fields: fields.map((f) => f.toBuilder),
