@@ -46,7 +46,9 @@ const {
   async_stringify,
 } = require("./common");
 
-const initial_config = initial_config_all_fields(false);
+const initial_config = async ({ table_id, exttable_name }) => {
+  return { columns: [], layout: { list_columns: true, besides: [] } };
+};
 
 const configuration_workflow = (req) =>
   new Workflow({
