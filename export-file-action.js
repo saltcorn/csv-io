@@ -116,7 +116,7 @@ module.exports = {
       fields,
       columns,
       false,
-      req,
+      req || { user, __: (s) => s },
       req?.__ || ((s) => s)
     );
 
