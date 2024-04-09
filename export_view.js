@@ -179,6 +179,7 @@ const columnsListBuilderStep = {
       triggerActions: [],
       builtInActions: [],
       roles,
+      disable_toolbox: { action: true, view: true, dropdown_menu: true },
       library,
 
       handlesTextStyle,
