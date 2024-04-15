@@ -110,6 +110,9 @@ module.exports = {
       forUser: user,
     });
 
+    const myReq = req
+      ? { noHTML: true, ...req }
+      : { user, __: (s) => s, noHTML: true };
     const tfields = layout?.list_columns
       ? get_viewable_fields_from_layout(
           view.name,
@@ -118,7 +121,7 @@ module.exports = {
           fields,
           columns,
           false,
-          req || { user, __: (s) => s },
+          myReq,
           req?.__ || ((s) => s),
           where1,
           view.name,
@@ -131,7 +134,7 @@ module.exports = {
           fields,
           columns,
           false,
-          req || { user, __: (s) => s },
+          myReq,
           req?.__ || ((s) => s)
         );
     const layoutCols = layout?.besides;

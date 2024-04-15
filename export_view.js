@@ -376,7 +376,7 @@ const do_download = async (
         fields,
         columns,
         false,
-        req,
+        { noHTML: true, ...req },
         req.__,
         state,
         viewname,
@@ -389,7 +389,7 @@ const do_download = async (
         fields,
         columns,
         false,
-        req,
+        { noHTML: true, ...req },
         req.__
       );
 
