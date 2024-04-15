@@ -61,7 +61,7 @@ module.exports = {
   }) => {
     const view = View.findOne({ name: export_view });
     const table = Table.findOne({ id: view.table_id });
-    const { columns, what, delimiter, bom } = view.configuration;
+    const { columns, what, layout, delimiter, bom } = view.configuration;
 
     const fields = await table.getFields();
     const { joinFields, aggregations } = picked_fields_to_query(
@@ -119,11 +119,13 @@ module.exports = {
       req || { user, __: (s) => s },
       req?.__ || ((s) => s)
     );
-
+    const layoutCols = layout?.besides;
     const csvRows = rows.map((row) => {
       const csvRow = {};
-      tfields.forEach(({ label, key }) => {
-        csvRow[label] = typeof key === "function" ? key(row) : row[key];
+      tfields.forEach(({ label, key }, ix) => {
+        const layooutCol = layoutCols?.[ix];
+        csvRow[layooutCol?.header_label || label] =
+          typeof key === "function" ? key(row) : row[key];
       });
       return csvRow;
     });
