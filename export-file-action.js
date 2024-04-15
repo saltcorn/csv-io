@@ -14,6 +14,7 @@ const {
 const { auto_expand_json_cols, async_stringify } = require("./common");
 const {
   get_viewable_fields,
+  get_viewable_fields_from_layout,
 } = require("@saltcorn/data/base-plugin/viewtemplates/viewable_fields");
 const { interpolate } = require("@saltcorn/data/utils");
 
@@ -109,16 +110,30 @@ module.exports = {
       forUser: user,
     });
 
-    const tfields = get_viewable_fields(
-      view.name,
-      "",
-      table,
-      fields,
-      columns,
-      false,
-      req || { user, __: (s) => s },
-      req?.__ || ((s) => s)
-    );
+    const tfields = layout?.list_columns
+      ? get_viewable_fields_from_layout(
+          view.name,
+          "",
+          table,
+          fields,
+          columns,
+          false,
+          req || { user, __: (s) => s },
+          req?.__ || ((s) => s),
+          where1,
+          view.name,
+          layout.besides
+        )
+      : get_viewable_fields(
+          view.name,
+          "",
+          table,
+          fields,
+          columns,
+          false,
+          req || { user, __: (s) => s },
+          req?.__ || ((s) => s)
+        );
     const layoutCols = layout?.besides;
     const csvRows = rows.map((row) => {
       const csvRow = {};

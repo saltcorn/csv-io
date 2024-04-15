@@ -36,6 +36,7 @@ const {
 
 const {
   get_viewable_fields,
+  get_viewable_fields_from_layout,
 } = require("@saltcorn/data/base-plugin/viewtemplates/viewable_fields");
 const { hashState } = require("@saltcorn/data/utils");
 const { getState, features } = require("@saltcorn/data/db/state");
@@ -367,16 +368,30 @@ const do_download = async (
     forUser: req.user,
   });
 
-  const tfields = get_viewable_fields(
-    viewname,
-    stateHash,
-    table,
-    fields,
-    columns,
-    false,
-    req,
-    req.__
-  );
+  const tfields = layout?.list_columns
+    ? get_viewable_fields_from_layout(
+        viewname,
+        stateHash,
+        table,
+        fields,
+        columns,
+        false,
+        req,
+        req.__,
+        state,
+        viewname,
+        layout.besides
+      )
+    : get_viewable_fields(
+        viewname,
+        stateHash,
+        table,
+        fields,
+        columns,
+        false,
+        req,
+        req.__
+      );
 
   const layoutCols = layout?.besides;
   const csvRows = rows.map((row) => {
