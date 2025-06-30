@@ -274,6 +274,32 @@ const configuration_workflow = (req) =>
                 default: "Export CSV",
               },
               {
+                name: "button_style",
+                label: req.__("Button Style"),
+                type: "String",
+                required: true,
+                attributes: {
+                  options: [
+                    { name: "btn-primary", label: req.__("Primary button") },
+                    {
+                      name: "btn-secondary",
+                      label: req.__("Secondary button"),
+                    },
+                    { name: "btn-success", label: req.__("Success button") },
+                    { name: "btn-danger", label: req.__("Danger button") },
+                    {
+                      name: "btn-outline-primary",
+                      label: req.__("Primary outline button"),
+                    },
+                    {
+                      name: "btn-outline-secondary",
+                      label: req.__("Secondary outline button"),
+                    },
+                    { name: "btn-link", label: req.__("Link") },
+                  ],
+                },
+              },
+              {
                 name: "bom",
                 label: "Add BOM",
                 sublabel: "Prepend the UTF-8 byte order mark (BOM) to the file",
@@ -300,13 +326,13 @@ const get_state_fields = async (table_id, viewname, { show_view }) => {
 const run = async (
   table_id,
   viewname,
-  { columns, label },
+  { columns, label, button_style },
   state,
   extraArgs
 ) => {
   return button(
     {
-      class: "btn btn-primary",
+      class: ["btn", button_style || "btn-primary"],
       onclick: `view_post('${viewname}', 'do_download', {});`,
     },
     i({ class: "fas fa-download me-1" }),
