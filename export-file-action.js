@@ -84,10 +84,11 @@ module.exports = {
     };
 
     if (what === "All columns") {
+      const pk_name = table.pk_name;
       const columns = table.fields
-        .sort((a, b) => a.id - b.id)
+        .sort((a, b) => a[pk_name] - b[pk_name])
         .map((f) => f.name);
-      const rows = await table.getRows(where1, { orderBy: "id" });
+      const rows = await table.getRows(where1, { orderBy: pk_name });
       auto_expand_json_cols(columns, table, rows);
       const str = await async_stringify(rows, {
         header: true,

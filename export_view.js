@@ -343,8 +343,12 @@ const do_download = async (
   });
 
   if (what === "All columns") {
-    const columns = table.fields.sort((a, b) => a.id - b.id).map((f) => f.name);
-    const rows = await table.getRows(where, { orderBy: "id" });
+    const pk_name = table.pk_name;
+
+    const columns = table.fields
+      .sort((a, b) => a[pk_name] - b[pk_name])
+      .map((f) => f.name);
+    const rows = await table.getRows(where, { orderBy: pk_name });
     auto_expand_json_cols(columns, table, rows);
     const str = await async_stringify(rows, {
       header: true,
