@@ -5,6 +5,8 @@ const Library = require("@saltcorn/data/models/library");
 const User = require("@saltcorn/data/models/user");
 const View = require("@saltcorn/data/models/view");
 const Workflow = require("@saltcorn/data/models/workflow");
+const { jsexprToWhere } = require("@saltcorn/data/models/expression");
+const { mergeIntoWhere } = require("@saltcorn/data/utils");
 const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 
 const URL = require("url").URL;
@@ -22,6 +24,7 @@ const {
   hr,
   text_attr,
   button,
+  code,
 } = require("@saltcorn/markup/tags");
 const {
   field_picker_fields,
@@ -243,8 +246,11 @@ const configuration_workflow = (req) =>
     steps: [
       {
         name: "Specification",
-        form: () =>
-          new Form({
+        form: (context) => {
+          const table = Table.findOne(
+            context.table_id || context.exttable_name
+          );
+          return new Form({
             fields: [
               {
                 name: "what",
@@ -252,6 +258,30 @@ const configuration_workflow = (req) =>
                 type: "String",
                 required: true,
                 attributes: { options: ["All columns", "Specify columns"] },
+              },
+              {
+                name: "include_fml",
+                label: req.__("Row inclusion formula"),
+                class: "validate-expression",
+                sublabel:
+                  req.__("Only include rows where this formula is true. ") +
+                  req.__("In scope:") +
+                  " " +
+                  [
+                    ...table.fields.map((f) => f.name),
+                    "user",
+                    "year",
+                    "month",
+                    "day",
+                    "today()",
+                  ]
+                    .map((s) => code(s))
+                    .join(", "),
+                type: "String",
+                help: {
+                  topic: "Inclusion Formula",
+                  context: { table_name: table.name },
+                },
               },
               {
                 name: "delimiter",
@@ -306,7 +336,8 @@ const configuration_workflow = (req) =>
                 type: "Bool",
               },
             ],
-          }),
+          });
+        },
       },
       features.list_builder ? columnsListBuilderStep : columnsLegacyStep(req),
     ],
@@ -343,7 +374,7 @@ const run = async (
 const do_download = async (
   table_id,
   viewname,
-  { columns, layout, what, delimiter, bom },
+  { columns, layout, what, delimiter, bom, include_fml },
   body,
   { req, res }
 ) => {
@@ -372,6 +403,11 @@ const do_download = async (
     prefix: "a.",
     stateHash,
   });
+  if (include_fml) {
+    const ctx = { ...state, user_id: req.user?.id || null, user: req.user };
+    let where1 = jsexprToWhere(include_fml, ctx, fields);
+    mergeIntoWhere(where, where1 || {});
+  }
 
   if (what === "All columns") {
     const pk_name = table.pk_name;
