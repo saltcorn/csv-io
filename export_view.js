@@ -338,7 +338,7 @@ const do_download = async (
   const q = await stateFieldsToQuery({
     state,
     fields,
-    prefix: "a.",
+    //prefix: "a.",
     stateHash,
   });
 
