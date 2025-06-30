@@ -334,11 +334,16 @@ const do_download = async (
 
   const fields = await table.getFields();
   const { joinFields, aggregations } = picked_fields_to_query(columns, fields);
-  const where = await stateFieldsToWhere({ fields, state, table });
+  const where = await stateFieldsToWhere({
+    fields,
+    state,
+    table,
+    prefix: "a.",
+  });
   const q = await stateFieldsToQuery({
     state,
     fields,
-    //prefix: "a.",
+    prefix: "a.",
     stateHash,
   });
 
