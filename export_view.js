@@ -65,6 +65,14 @@ const columnsListBuilderStep = {
     );
     const fields = table.getFields();
     //console.log(context);
+    for (const field of fields) {
+      if (field.type === "Key") {
+        field.reftable = Table.findOne({
+          name: field.reftable_name,
+        });
+        if (field.reftable) await field.reftable.getFields();
+      }
+    }
     const { field_view_options, handlesTextStyle } = calcfldViewOptions(
       fields,
       "list"
