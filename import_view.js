@@ -3,12 +3,7 @@ const File = require("@saltcorn/data/models/file");
 const Form = require("@saltcorn/data/models/form");
 const Workflow = require("@saltcorn/data/models/workflow");
 const { eval_expression } = require("@saltcorn/data/models/expression");
-const { dollarizeObject } = require("@saltcorn/data/utils");
 const { div, button, i } = require("@saltcorn/markup/tags");
-const { async_stringify, auto_expand_json_cols } = require("./common");
-const fsp = require("fs/promises");
-const os = require("os");
-const path = require("path");
 
 const initial_config = async ({}) => ({
   label: "Import CSV",
@@ -59,29 +54,25 @@ const configuration_workflow = (req) =>
               },
               {
                 name: "field_values_formula",
-                label: req.__("Row values formula"),
+                label: req.__("Extra values (formula)"),
                 class: "validate-expression",
                 sublabel:
                   req.__(
-                    "Optional. A formula evaluated for each CSV row to set/override field values."
+                    "Optional. A formula evaluated once to set fixed values for all imported rows."
                   ) +
                   " " +
-                  req.__("Use ") +
-                  "<code>parent</code>" +
-                  req.__(" for the current row, ") +
-                  "<code>$foo</code>" +
-                  req.__(" for shorthand access to a column, and ") +
-                  "<code>user</code>. " +
-                  req.__("Example: ") +
-                  "<code>{status: parent.position}</code>",
+                  req.__("You can also reference ") +
+                  "<code>user</code>" +
+                  req.__(" Example: ") +
+                  "<code>{status: 'new', owner: user.id}</code>",
                 type: "String",
                 fieldview: "textarea",
               },
               {
                 name: "overwrite_csv_fields",
-                label: req.__("Overwrite CSV values"),
+                label: req.__("Overwrite CSV by extra values"),
                 sublabel: req.__(
-                  "If a key from the formula is also present in the CSV, overwrite with formula value"
+                  "If a key from the formula is also present in the CSV, overwrite it with the extra value"
                 ),
                 type: "Bool",
                 default: true,
@@ -132,75 +123,28 @@ const do_upload = async (table_id, viewname, configuration, body, { req }) => {
   const importPath = saved.location || saved.path_to_serve || saved.filename;
 
   try {
-    let importFilePath = importPath;
-
+    let extra_row_values = undefined;
     if (configuration?.field_values_formula) {
-      try {
-        const fields = await table.getFields();
-        const fieldNames = new Set(fields.map((f) => f.name));
-        const tmpDir = await fsp.mkdtemp(path.join(os.tmpdir(), "sc-csv-"));
-        const tmpCsvPath = path.join(tmpDir, path.basename(importPath));
-
-        const parsed = await table.import_csv_file(importPath, {
-          no_table_write: true,
-          no_transaction: true,
-        });
-        if (parsed?.error) return { json: { error: parsed.error, details: parsed.details } };
-        const rows = parsed?.rows || [];
-
-        const transformed = rows.map((row) => {
-          const parent = row; // current CSV row context
-          const exprRow = { parent, ...dollarizeObject(parent) };
-          const val = eval_expression(
-            configuration.field_values_formula,
-            exprRow,
-            req.user,
-            "Row values formula"
-          );
-          if (!val || typeof val !== "object" || Array.isArray(val))
-            throw new Error("Row values formula must evaluate to an object");
-          const filtered = Object.fromEntries(
-            Object.entries(val).filter(([k]) => fieldNames.has(k))
-          );
-          const overwrite = configuration?.overwrite_csv_fields !== false; // default true
-          const out = { ...row };
-          if (overwrite) Object.assign(out, filtered);
-          else {
-            for (const [k, v] of Object.entries(filtered)) {
-              if (typeof out[k] === "undefined" || out[k] === null || out[k] === "") out[k] = v;
-            }
-          }
-          return out;
-        });
-
-        const headerSet = new Set();
-        for (const r of transformed) Object.keys(r).forEach((k) => headerSet.add(k));
-        const columns = [...headerSet];
-
-        auto_expand_json_cols(columns, table, transformed);
-
-        const csvStr = await async_stringify(transformed, {
-          header: true,
-          columns,
-          delimiter: ",",
-          cast: {
-            date: (value) => value instanceof Date ? value.toISOString() : value,
-            boolean: (v) => (v ? "true" : "false"),
-          },
-        });
-        await fsp.writeFile(tmpCsvPath, csvStr);
-        importFilePath = tmpCsvPath;
-      } catch (e) {
-        return { json: { error: `Row values formula error: ${e.message}` } };
-      }
+      const val = eval_expression(
+        configuration.field_values_formula,
+        {},
+        req.user,
+        "Extra values formula"
+      );
+      if (!val || typeof val !== "object" || Array.isArray(val))
+        return {
+          json: { error: "Extra values formula must evaluate to an object" },
+        };
+      extra_row_values = val;
     }
 
     const opts = {
       no_transaction: true,
       overwrite_csv_fields: configuration?.overwrite_csv_fields !== false,
+      extra_row_values,
     };
 
-    const result = await table.import_csv_file(importFilePath, opts);
+    const result = await table.import_csv_file(importPath, opts);
     if (result.error)
       return { json: { error: result.error, details: result.details } };
     else return { json: { success: result.success, details: result.details } };
