@@ -90,6 +90,7 @@ const run = async (
   state,
   extra
 ) => {
+  const encodedState = encodeURIComponent(JSON.stringify(state || {}));
   return button(
     {
       class: ["btn", button_style || "btn-primary"],
@@ -99,7 +100,7 @@ const run = async (
     label || "Import CSV",
     div(
       { style: "display:none" },
-      `<input id='sc_csv_input_${viewname}' type='file' accept='.csv,text/csv' onchange="(function(el){const f=el.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); view_post('${viewname}', 'do_upload', fd); })(this)" />`
+      `<input id='sc_csv_input_${viewname}' type='file' accept='.csv,text/csv' onchange="(function(el){const f=el.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); fd.append('state', '${encodedState}'); view_post('${viewname}', 'do_upload', fd); })(this)" />`
     )
   );
 };
@@ -123,11 +124,22 @@ const do_upload = async (table_id, viewname, configuration, body, { req }) => {
   const importPath = saved.location || saved.path_to_serve || saved.filename;
 
   try {
+    let viewState = {};
+    const rawState = body?.state || req?.body?.state;
+    if (typeof rawState === "string") {
+      try {
+        viewState = JSON.parse(decodeURIComponent(rawState));
+      } catch (e) {
+        viewState = {};
+      }
+    } else if (rawState && typeof rawState === "object") {
+      viewState = rawState;
+    }
     let extra_row_values = undefined;
     if (configuration?.field_values_formula) {
       const val = eval_expression(
         configuration.field_values_formula,
-        {},
+        viewState,
         req.user,
         "Extra values formula"
       );
