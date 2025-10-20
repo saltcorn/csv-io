@@ -3,7 +3,7 @@ const { auto_expand_json_cols, async_stringify } = require("./common");
 module.exports = {
   sc_plugin_api_version: 1,
   plugin_name: "csv-io",
-  viewtemplates: [require("./export_view")],
+  viewtemplates: [require("./export_view"), require("./import_view")],
   testString: "testing",
   actions: {
     import_csv_file: require("./import-file-action"),
