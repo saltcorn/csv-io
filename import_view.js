@@ -5,7 +5,7 @@ const Workflow = require("@saltcorn/data/models/workflow");
 const { eval_expression } = require("@saltcorn/data/models/expression");
 const { div, button, i } = require("@saltcorn/markup/tags");
 
-const initial_config = async ({}) => ({
+const initial_config = async () => ({
   label: "Import CSV",
   button_style: "btn-primary",
   overwrite_csv_fields: true,
