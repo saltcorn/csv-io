@@ -498,6 +498,9 @@ module.exports = {
   configuration_workflow,
   run,
   initial_config,
+  enable_copilot_viewgen: true,
+  copilot_generate_view_prompt:
+    "Creates a download button that exports the table's rows as a CSV file. No special configuration is required — the default initial_config exports all columns. Use this viewtemplate for any CSV export requirement.",
 
   routes: { do_download },
 };

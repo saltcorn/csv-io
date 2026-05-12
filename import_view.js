@@ -171,5 +171,8 @@ module.exports = {
   initial_config,
   configuration_workflow,
   run,
+  enable_copilot_viewgen: true,
+  copilot_generate_view_prompt:
+    "Shows a file-upload button that bulk-imports CSV rows into the table. No special configuration is required — use initial_config defaults. Optionally set field_values_formula to fix values on every imported row (e.g. {owner_id: user.id}). Use this viewtemplate for any CSV import requirement.",
   routes: { do_upload },
 };
