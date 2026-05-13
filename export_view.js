@@ -372,7 +372,7 @@ const run = async (
   return button(
     {
       class: ["btn", button_style || "btn-primary"],
-      onclick: `view_post('${viewname}', 'do_download', {});`,
+      onclick: `(function(btn){btn.disabled=true;view_post('${viewname}','do_download',{},function(){btn.disabled=false;});})(this);`,
     },
     i({ class: "fas fa-download me-1" }),
     label || "Export CSV"
