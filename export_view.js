@@ -372,7 +372,7 @@ const run = async (
   return button(
     {
       class: ["btn", button_style || "btn-primary"],
-      onclick: `view_post('${viewname}', 'do_download', {});`,
+      onclick: `(function(btn){btn.disabled=true;view_post('${viewname}','do_download',{},function(){btn.disabled=false;});})(this);`,
     },
     i({ class: "fas fa-download me-1" }),
     label || "Export CSV"
@@ -498,6 +498,9 @@ module.exports = {
   configuration_workflow,
   run,
   initial_config,
+  enable_copilot_viewgen: true,
+  copilot_generate_view_prompt:
+    "Creates a download button that exports the table's rows as a CSV file. No special configuration is required — the default initial_config exports all columns. Use this viewtemplate for any CSV export requirement.",
 
   routes: { do_download },
 };

@@ -7,6 +7,7 @@ const json_response = (table, str) => ({
       filename: `${table.name}.csv`,
       mimetype: "text/csv",
     },
+    notify_success: `${table.name}.csv exported successfully`,
   },
 });
 

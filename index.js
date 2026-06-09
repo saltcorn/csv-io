@@ -1,8 +1,10 @@
 const { auto_expand_json_cols, async_stringify } = require("./common");
+const appConstructorRules = require("./app-constructor-rules");
 
 module.exports = {
   sc_plugin_api_version: 1,
   plugin_name: "csv-io",
+  app_constructor_rules: appConstructorRules.join("\n"),
   viewtemplates: [require("./export_view"), require("./import_view")],
   testString: "testing",
   actions: {

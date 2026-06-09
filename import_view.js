@@ -100,7 +100,7 @@ const run = async (
     label || "Import CSV",
     div(
       { style: "display:none" },
-      `<input id='sc_csv_input_${viewname}' type='file' accept='.csv,text/csv' onchange="(function(el){const f=el.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); fd.append('state', '${encodedState}'); view_post('${viewname}', 'do_upload', fd); })(this)" />`
+      `<input id='sc_csv_input_${viewname}' type='file' accept='.csv,text/csv' onchange="(function(el){const f=el.files[0]; if(!f) return; const fd=new FormData(); fd.append('file', f); fd.append('state', '${encodedState}'); el.value=''; view_post('${viewname}', 'do_upload', fd); })(this)" />`
     )
   );
 };
@@ -159,7 +159,14 @@ const do_upload = async (table_id, viewname, configuration, body, { req }) => {
     const result = await table.import_csv_file(importPath, opts);
     if (result.error)
       return { json: { error: result.error, details: result.details } };
-    else return { json: { success: result.success, details: result.details } };
+    else
+      return {
+        json: {
+          success: result.success,
+          notify_success: result.success,
+          details: result.details,
+        },
+      };
   } catch (e) {
     return { json: { error: e.message } };
   }
@@ -171,5 +178,8 @@ module.exports = {
   initial_config,
   configuration_workflow,
   run,
+  enable_copilot_viewgen: true,
+  copilot_generate_view_prompt:
+    "Shows a file-upload button that bulk-imports CSV rows into the table. No special configuration is required — use initial_config defaults. Optionally set field_values_formula to fix values on every imported row (e.g. {owner_id: user.id}). Use this viewtemplate for any CSV import requirement.",
   routes: { do_upload },
 };
