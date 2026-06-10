@@ -20,7 +20,10 @@ const { interpolate } = require("@saltcorn/data/utils");
 
 module.exports = {
   configFields: async ({ table }) => {
-    const views = await View.find({ viewtemplate: "CSV Export" });
+    const views = await View.find(
+      { viewtemplate: "CSV Export" },
+      { cached: true },
+    );
     return [
       {
         name: "export_view",
@@ -67,14 +70,14 @@ module.exports = {
     const fields = await table.getFields();
     const { joinFields, aggregations } = picked_fields_to_query(
       columns,
-      table.fields
+      table.fields,
     );
 
     const where1 = where
       ? jsexprToWhere(
           where,
           { ...(row || {}), user, user_id: user?.id },
-          fields
+          fields,
         )
       : {};
     const write_file = async (str) => {
@@ -126,7 +129,7 @@ module.exports = {
           req?.__ || ((s) => s),
           where1,
           view.name,
-          layout.besides
+          layout.besides,
         )
       : get_viewable_fields(
           view.name,
@@ -136,7 +139,7 @@ module.exports = {
           columns,
           false,
           myReq,
-          req?.__ || ((s) => s)
+          req?.__ || ((s) => s),
         );
     const layoutCols = layout?.besides;
     const csvRows = rows.map((row) => {
